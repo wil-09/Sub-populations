@@ -195,5 +195,6 @@ end
 plot(x, Mf1(round(0.75*M),:), 'linewidth', 3)
 end
 xlabel 'x', ylabel 'm(r,t)'
-legend('\beta = -100', '\beta = -200', '\beta = -500')
+legend('\beta = -5', '\beta = -15', '\beta = -25')
 toc
+
