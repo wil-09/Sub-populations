@@ -12,7 +12,7 @@ t = linspace(0, 100, 1000);
 % Define problem
 problem.num_vars = 17;
 problem.names = {'r_1', 'r_2', '\alpha_1', '\alpha_2', '\beta', '\chi_1', '\chi_2', 'D_1', 'D_2', 'D_3', 'h_1', 'h_2', '\beta_1', '\beta_2', '\mu', 'u0', 'V_g'};
-problem.bounds = [0, 1;  0, 1;   0, 1;       0, 1;       1, 10;   0, 1;     0, 1;   0, 1;   0, 1;  0, 1; 1, 10;  1, 10;  1, 10;    1, 10;     0, 1;  0, 1;  0, 10];
+problem.bounds = [0, 1;  0, 1;   0, 1;       0, 1;       50, 200;   0, 1;     0, 1;   0, 1;   0, 1;  0, 1; 1, 10;  1, 10;  1, 10;    1, 10;     0, 1;  0, 1;  0, 10];
 
 % Generate samples
 param_values = lhsdesign(2^8, problem.num_vars);
@@ -24,9 +24,10 @@ end
 Y = zeros(size(param_values, 1), 6); % n, m, c at final time
 for i = 1:size(param_values, 1)
     params = param_values(i, :);
-    options = odeset('RelTol',1e-8,'AbsTol',1e-8);
-    [~, solution] = ode23s(@(t, z) GMM(t, z, params), t, z0, options);
-%     [~, solution] = ode45(@(t, z) GMM(t, z, params), t, z0);
+% %     options = odeset('RelTol',1e-8,'AbsTol',1e-8);
+% %     [~, solution] = ode23(@(t, z) GMM(t, z, params), t, z0);
+% %     [~, solution] = ode23s(@(t, z) GMM(t, z, params), t, z0, options);
+    [~, solution] = ode45(@(t, z) GMM(t, z, params), t, z0);
     Y(i, :) = solution(end, :); % final values of n, m, c
 end
 
