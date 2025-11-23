@@ -8,11 +8,12 @@ rng(13579);
 n0 = 1; n10 = 0; m0 = 1; m10 = 0; c0 = 1; c10 = 0; z0 = [n0; n10; m0; m10; c0; c10];
 
 % Time points
-t = linspace(0, 100, 1000);
+t = linspace(0, 100, 1000000);
+
 % Define problem
-problem.num_vars = 17;
-problem.names = {'r_1', 'r_2', '\alpha_1', '\alpha_2', '\beta', '\chi_1', '\chi_2', 'D_1', 'D_2', 'D_3', 'h_1', 'h_2', '\beta_1', '\beta_2', '\mu', 'u0', 'V_g'};
-problem.bounds = [0, 1;  0, 1;   0, 1;       0, 1;       50, 200;   0, 1;     0, 1;   0, 1;   0, 1;  0, 1; 1, 10;  1, 10;  1, 10;    1, 10;     0, 1;  0, 1;  0, 10];
+problem.num_vars = 18;
+problem.names = {'r_1', 'r_2', '\alpha_1', '\alpha_2', '\sigma_1', '\sigma_2', '\chi_1', '\chi_2', 'D_1', 'D_2', 'D_3', 'h_1', 'h_2', '\beta_1', '\beta_2', '\mu', 'u0', 'V_g'};
+problem.bounds = [0, 1; 0, 1; 0, 1; 0, 1; 1, 10; 1, 10; 0, 1; 0, 1; 0, 1; 0, 1; 0, 1; 1, 10; 1, 10; 1, 10; 1, 10; 0, 1; 0, 1; 0, 10];
 
 % Generate samples
 param_values = lhsdesign(2^8, problem.num_vars);
@@ -24,9 +25,6 @@ end
 Y = zeros(size(param_values, 1), 6); % n, m, c at final time
 for i = 1:size(param_values, 1)
     params = param_values(i, :);
-% %     options = odeset('RelTol',1e-8,'AbsTol',1e-8);
-% %     [~, solution] = ode23(@(t, z) GMM(t, z, params), t, z0);
-% %     [~, solution] = ode23s(@(t, z) GMM(t, z, params), t, z0, options);
     [~, solution] = ode45(@(t, z) GMM(t, z, params), t, z0);
     Y(i, :) = solution(end, :); % final values of n, m, c
 end
@@ -43,7 +41,7 @@ disp('PRCC matrix (rows=parameters, cols=[n m c]):');
 disp(prcc_values);
 
 % Select only the parameters of interest
-selected_params = {'r_1','r_2','\alpha_1','\alpha_2','\beta',...
+selected_params = {'r_1','r_2','\alpha_1','\alpha_2','\sigma_1','\sigma_2',...
                    '\chi_1','\chi_2','D_1','D_2','D_3','h_1','h_2',...
                    '\beta_1','\beta_2','\mu','u0'};
 
@@ -84,16 +82,16 @@ ylabel('PRCC (c)');
 % ODE system
 function dzdt = GMM(t, z, params)
     r1 = params(1); r2 = params(2); alpha1 = params(3); alpha2 = params(4);
-    beta = params(5); chi1 = params(6); chi2 = params(7); D1 = params(8); 
-    D2 = params(9); D3 = params(10); h1 = params(11); h2 = params(12); 
-    beta1 = params(13); beta2 = params(14); mu = params(15);
-    u0 = params(16); Vg = params(17);
+    sigma1 = params(5); sigma2 = params(6); chi1 = params(7); chi2 = params(8);
+    D1 = params(9); D2 = params(10); D3 = params(11);
+    h1 = params(12); h2 = params(13); beta1 = params(14); beta2 = params(15); mu = params(16);
+    u0 = params(17); Vg = params(18);
     n = z(1); n1 = z(2); m = z(3); m1 = z(4); c = z(5); c1 = z(6);
     dndt = n1;
-    dn1dt = (((u0 - Vg + (chi1*(1 + beta))*n1 + (chi2*(1 - beta))*m1)*c1 - h1*n + h2*m + c*(mu + beta1*n + beta2*m))*((-(chi2*(1 - beta))*n)*(-chi2*m) - (-chi1*n)*(D2 - (chi2*(1 - beta))*m)) + (-(-(chi2*(1 - beta))*n)*(-D3) + (-chi1*n)*(-(chi2*(1 - beta))*c))*((u0 - Vg + chi2*c1 + (chi1*(1 + beta))*n1 + (chi2*(1 - beta))*m1)*m1 - r2*m*(1 - m - alpha2*n)) + ((D2 - (chi2*(1 - beta))*m)*(-D3) - (-chi2*m)*(-(chi2*(1 - beta))*c))*((u0 - Vg + chi1*c1 + (chi1*(1 + beta))*n1 + (chi2*(1 - beta))*m1)*n1 - r1*n*(1 - n - alpha1*m)))/((D1 - (chi1*(1 + beta))*n)*(D2 - (chi2*(1 - beta))*m)*(-D3) - (D1 - (chi1*(1 + beta))*n)*(-chi2*m)*(-(chi2*(1 - beta))*c) - (-(chi2*(1 - beta))*n)*(-(chi1*(1 + beta))*m)*(-D3) + (-(chi2*(1 - beta))*n)*(-chi2*m)*(-(chi1*(1 + beta))*c) + (-chi1*n)*(-(chi1*(1 + beta))*m)*(-(chi2*(1 - beta))*c) - (-chi1*n)*(D2 - (chi2*(1 - beta))*m)*(-(chi1*(1 + beta))*c));
+    dn1dt = (((u0 - Vg + sigma1*n1 + sigma2*m1)*c1 - h1*n + h2*m + c*(mu + beta1*n + beta2*m))*((-sigma2*n)*(-chi2*m) - (-chi1*n)*(D2 - sigma2*m)) + (-(-sigma2*n)*(-D3) + (-chi1*n)*(-sigma2*c))*((u0 - Vg + chi2*c1 + sigma1*n1 + sigma2*m1)*m1 - r2*m*(1 - m - alpha2*n)) + ((D2 - sigma2*m)*(-D3) - (-chi2*m)*(-sigma2*c))*((u0 - Vg + chi1*c1 + sigma1*n1 + sigma2*m1)*n1 - r1*n*(1 - n - alpha1*m)))/((D1 - sigma1*n)*(D2 - sigma2*m)*(-D3) - (D1 - sigma1*n)*(-chi2*m)*(-sigma2*c) - (-sigma2*n)*(-sigma1*m)*(-D3) + (-sigma2*n)*(-chi2*m)*(-sigma1*c) + (-chi1*n)*(-sigma1*m)*(-sigma2*c) - (-chi1*n)*(D2 - sigma2*m)*(-sigma1*c));
     dmdt = m1;
-    dm1dt = -(((D1 - (chi1*(1 + beta))*n)*(-chi2*m) - (-chi1*n)*(-(chi1*(1 + beta))*m))*((u0 - Vg + (chi1*(1 + beta))*n1 + (chi2*(1 - beta))*m1)*c1 - h1*n + h2*m + c*(mu + beta1*n + beta2*m)) + (-(D1 - (chi1*(1 + beta))*n)*(-D3) + (-chi1*n)*(-(chi1*(1 + beta))*c))*((u0 - Vg + chi2*c1 + (chi1*(1 + beta))*n1 + (chi2*(1 - beta))*m1)*m1 - r2*m*(1 - m - alpha2*n)) + ((-(chi1*(1 + beta))*m)*(-D3) - (-chi2*m)*(-(chi1*(1 + beta))*c))*((u0 - Vg + chi1*c1 + (chi1*(1 + beta))*n1 + (chi2*(1 - beta))*m1)*n1 - r1*n*(1 - n - alpha1*m)))/((D1 - (chi1*(1 + beta))*n)*(D2 - (chi2*(1 - beta))*m)*(-D3) - (D1 - (chi1*(1 + beta))*n)*(-chi2*m)*(-(chi2*(1 - beta))*c) - (-(chi2*(1 - beta))*n)*(-(chi1*(1 + beta))*m)*(-D3) + (-(chi2*(1 - beta))*n)*(-chi2*m)*(-(chi1*(1 + beta))*c) + (-chi1*n)*(-(chi1*(1 + beta))*m)*(-(chi2*(1 - beta))*c) - (-chi1*n)*(D2 - (chi2*(1 - beta))*m)*(-(chi1*(1 + beta))*c));
+    dm1dt = -(((D1 - sigma1*n)*(-chi2*m) - (-chi1*n)*(-sigma1*m))*((u0 - Vg + sigma1*n1 + sigma2*m1)*c1 - h1*n + h2*m + c*(mu + beta1*n + beta2*m)) + (-(D1 - sigma1*n)*(-D3) + (-chi1*n)*(-sigma1*c))*((u0 - Vg + chi2*c1 + sigma1*n1 + sigma2*m1)*m1 - r2*m*(1 - m - alpha2*n)) + ((-sigma1*m)*(-D3) - (-chi2*m)*(-sigma1*c))*((u0 - Vg + chi1*c1 + sigma1*n1 + sigma2*m1)*n1 - r1*n*(1 - n - alpha1*m)))/((D1 - sigma1*n)*(D2 - sigma2*m)*(-D3) - (D1 - sigma1*n)*(-chi2*m)*(-sigma2*c) - (-sigma2*n)*(-sigma1*m)*(-D3) + (-sigma2*n)*(-chi2*m)*(-sigma1*c) + (-chi1*n)*(-sigma1*m)*(-sigma2*c) - (-chi1*n)*(D2 - sigma2*m)*(-sigma1*c));
     dcdt = c1;
-    dc1dt = (((D1 - (chi1*(1 + beta))*n)*(D2 - (chi2*(1 - beta))*m) - (-(chi2*(1 - beta))*n)*(-(chi1*(1 + beta))*m))*((u0 - Vg + (chi1*(1 + beta))*n1 + (chi2*(1 - beta))*m1)*c1 - h1*n + h2*m + c*(mu + beta1*n + beta2*m)) + (-(D1 - (chi1*(1 + beta))*n)*(-(chi2*(1 - beta))*c) + (-(chi2*(1 - beta))*n)*(-(chi1*(1 + beta))*c))*((u0 - Vg + chi2*c1 + (chi1*(1 + beta))*n1 + (chi2*(1 - beta))*m1)*m1 - r2*m*(1 - m - alpha2*n)) + ((-(chi1*(1 + beta))*m)*(-(chi2*(1 - beta))*c) - (D2 - (chi2*(1 - beta))*m)*(-(chi1*(1 + beta))*c))*((u0 - Vg + chi1*c1 + (chi1*(1 + beta))*n1 + (chi2*(1 - beta))*m1)*n1 - r1*n*(1 - n - alpha1*m)))/((D1 - (chi1*(1 + beta))*n)*(D2 - (chi2*(1 - beta))*m)*(-D3) - (D1 - (chi1*(1 + beta))*n)*(-chi2*m)*(-(chi2*(1 - beta))*c) - (-(chi2*(1 - beta))*n)*(-(chi1*(1 + beta))*m)*(-D3) + (-(chi2*(1 - beta))*n)*(-chi2*m)*(-(chi1*(1 + beta))*c) + (-chi1*n)*(-(chi1*(1 + beta))*m)*(-(chi2*(1 - beta))*c) - (-chi1*n)*(D2 - (chi2*(1 - beta))*m)*(-(chi1*(1 + beta))*c));
+    dc1dt = (((D1 - sigma1*n)*(D2 - sigma2*m) - (-sigma2*n)*(-sigma1*m))*((u0 - Vg + sigma1*n1 + sigma2*m1)*c1 - h1*n + h2*m + c*(mu + beta1*n + beta2*m)) + (-(D1 - sigma1*n)*(-sigma2*c) + (-sigma2*n)*(-sigma1*c))*((u0 - Vg + chi2*c1 + sigma1*n1 + sigma2*m1)*m1 - r2*m*(1 - m - alpha2*n)) + ((-sigma1*m)*(-sigma2*c) - (D2 - sigma2*m)*(-sigma1*c))*((u0 - Vg + chi1*c1 + sigma1*n1 + sigma2*m1)*n1 - r1*n*(1 - n - alpha1*m)))/((D1 - sigma1*n)*(D2 - sigma2*m)*(-D3) - (D1 - sigma1*n)*(-chi2*m)*(-sigma2*c) - (-sigma2*n)*(-sigma1*m)*(-D3) + (-sigma2*n)*(-chi2*m)*(-sigma1*c) + (-chi1*n)*(-sigma1*m)*(-sigma2*c) - (-chi1*n)*(D2 - sigma2*m)*(-sigma1*c));
     dzdt = [dndt; dn1dt; dmdt; dm1dt; dcdt; dc1dt];
 end
