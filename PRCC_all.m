@@ -25,7 +25,7 @@ end
 Y = zeros(size(param_values, 1), 6); % n, m, c at final time
 for i = 1:size(param_values, 1)
     params = param_values(i, :);
-    [~, solution] = ode45(@(t, z) GMM(t, z, params), t, z0);
+    [~, solution] = ode15s(@(t, z) GMM(t, z, params), t, z0);
     Y(i, :) = solution(end, :); % final values of n, m, c
 end
 
@@ -95,3 +95,4 @@ function dzdt = GMM(t, z, params)
     dc1dt = (((D1 - sigma1*n)*(D2 - sigma2*m) - (-sigma2*n)*(-sigma1*m))*((u0 - Vg + sigma1*n1 + sigma2*m1)*c1 - h1*n + h2*m + c*(mu + beta1*n + beta2*m)) + (-(D1 - sigma1*n)*(-sigma2*c) + (-sigma2*n)*(-sigma1*c))*((u0 - Vg + chi2*c1 + sigma1*n1 + sigma2*m1)*m1 - r2*m*(1 - m - alpha2*n)) + ((-sigma1*m)*(-sigma2*c) - (D2 - sigma2*m)*(-sigma1*c))*((u0 - Vg + chi1*c1 + sigma1*n1 + sigma2*m1)*n1 - r1*n*(1 - n - alpha1*m)))/((D1 - sigma1*n)*(D2 - sigma2*m)*(-D3) - (D1 - sigma1*n)*(-chi2*m)*(-sigma2*c) - (-sigma2*n)*(-sigma1*m)*(-D3) + (-sigma2*n)*(-chi2*m)*(-sigma1*c) + (-chi1*n)*(-sigma1*m)*(-sigma2*c) - (-chi1*n)*(D2 - sigma2*m)*(-sigma1*c));
     dzdt = [dndt; dn1dt; dmdt; dm1dt; dcdt; dc1dt];
 end
+
